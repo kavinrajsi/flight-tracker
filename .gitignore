@@ -7,3 +7,4 @@ xcuserdata/
 DerivedData/
 *.xcuserstate
 build/
+.vercel

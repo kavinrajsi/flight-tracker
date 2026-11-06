@@ -3,9 +3,8 @@
 ## API
 - [ ] `npm test` passes.
 - [ ] `GET /api/flight/!!` → 400 with clear message.
-- [ ] `GET /api/flight/ZZ1` (unmapped prefix) → 404, not 400.
 - [ ] `GET /api/flight/AI302?callsign=bad!` → 400.
-- [ ] Find a live callsign at <https://opensky-network.org/network/explorer>, call `/api/flight/<fn>?callsign=<cs>` → 200 with documented fields.
+- [ ] A real flight (e.g. one from flightradar24) → 200 with documented fields.
 - [ ] Unmatched flight → 404, message does not imply cancellation.
 - [ ] Non-GET → 405.
 - [ ] Response has `Cache-Control: public, s-maxage=30, ...` on 200.
@@ -14,7 +13,7 @@
 - [ ] Loads at `/`; input labelled; Enter submits.
 - [ ] Loading state shown during fetch.
 - [ ] Success card shows status, callsign, position, altitude, speed, heading, last contact.
-- [ ] 404 shows "Not currently found in tracking data".
+- [ ] 404 shows "Flight not found".
 - [ ] 400/5xx and offline show red error.
 - [ ] Mobile width (375px) no horizontal scroll; dark mode readable.
 
@@ -27,7 +26,7 @@
 - [ ] Small and medium widget layouts render.
 
 ## aviationstack
-- [ ] Without `AVIATIONSTACK_API_KEY`: responses have `dataSource: "OpenSky Network"`.
-- [ ] With key set: flight returns `dataSource: "aviationstack"` with `route` and `schedule`.
+- [ ] `AVIATIONSTACK_API_KEY` set in Vercel; `GET /api/flight/<real flight>` → `dataSource: "aviationstack"` with `route` and `schedule`.
+- [ ] Key missing → 500 "missing AVIATIONSTACK_API_KEY" (no key leaked).
 - [ ] Scheduled/cancelled flight returns that status and `position: null`.
-- [ ] Bad key / quota exhausted: falls back to OpenSky; key appears in no response or log.
+- [ ] Bad key / quota exhausted → 502 generic message; key appears in no response or log.

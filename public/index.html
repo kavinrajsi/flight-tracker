@@ -54,7 +54,7 @@
 
   <div id="out" aria-live="polite"></div>
 
-  <p class="foot">Data: aviationstack (schedules, route, delays) and OpenSky Network (aircraft surveillance). Schedule data is third-party and may be incomplete; OpenSky data is observed aircraft position only. Flight-number-to-callsign mapping is not guaranteed.</p>
+  <p class="foot">Data: aviationstack. Third-party data that may be incomplete or delayed; live position only appears while a flight is airborne and tracked.</p>
 </main>
 <script>
 const form = document.getElementById('form');
@@ -116,7 +116,7 @@ form.addEventListener('submit', async (e) => {
     const res = await fetch('/api/flight/' + encodeURIComponent(fn));
     const body = await res.json().catch(() => ({}));
     if (res.ok) render(body);
-    else if (res.status === 404) message('<strong>Not currently found in tracking data.</strong><br>' + esc(body.error || '') );
+    else if (res.status === 404) message('<strong>Flight not found.</strong><br>' + esc(body.error || '') );
     else message(esc(body.error || 'Something went wrong.'), 'error');
   } catch {
     message('Network error. Check your connection and try again.', 'error');

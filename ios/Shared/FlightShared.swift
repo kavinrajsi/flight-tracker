@@ -37,7 +37,7 @@ enum FlightError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .notFound: return "Not currently found in tracking data"
+        case .notFound: return "Flight not found"
         case .server(let m): return m
         case .network: return "Network unavailable"
         }

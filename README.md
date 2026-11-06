@@ -1,36 +1,36 @@
 # Flight Tracker
 
-Look up aircraft tracking data by flight number. Website + Vercel API (OpenSky Network) + SwiftUI iPhone app + WidgetKit Home Screen widget.
+Look up aircraft tracking data by flight number. Website + Vercel API (aviationstack) + SwiftUI iPhone app + WidgetKit Home Screen widget.
 
 Repo: https://github.com/kavinrajsi/flight-tracker
 
-## Data providers
+## Data provider
 
-1. **aviationstack** (optional, used when `AVIATIONSTACK_API_KEY` is set): route, schedule, delays, terminal/gate, status (`scheduled`/`airborne`/`landed`/`cancelled`/...) and live position when available. The free plan has a small monthly quota and **serves HTTP only**, so the key is sent unencrypted from Vercel to aviationstack. For HTTPS on a paid plan set `AVIATIONSTACK_BASE_URL=https://api.aviationstack.com/v1`.
-2. **OpenSky** (always the fallback): aircraft position only. Used when aviationstack has no match, is over quota, or errors.
+**aviationstack** (`AVIATIONSTACK_API_KEY`, required): route, schedule, delays, terminal/gate, status (`scheduled`/`airborne`/`landed`/`cancelled`/...) and live position when available. IATA numbers (`AI302`) are sent as `flight_iata`; ICAO flight codes (`AIC302`, or `?callsign=`) as `flight_icao`.
+
+The free plan has a small monthly quota and **serves HTTP only**, so the key is sent unencrypted from Vercel to aviationstack. For HTTPS on a paid plan set `AVIATIONSTACK_BASE_URL=https://api.aviationstack.com/v1`.
 
 The key stays server-side. Never commit it.
 
 ```bash
-vercel env add AVIATIONSTACK_API_KEY   # production / preview / development
+vercel env add AVIATIONSTACK_API_KEY production   # also preview / development
+vercel deploy --prod
 # local: put AVIATIONSTACK_API_KEY=... in .env.local (git-ignored), then `vercel dev`
 ```
 
-`dataSource` in each response says which provider answered. Extra fields from aviationstack: `airline`, `route`, `schedule`, `aircraft.registration/type`.
-
 ## Important limitations
 
-- **OpenSky is aircraft surveillance data, not an airline operations feed.** Schedules, delays, cancellations and gates come only from aviationstack, and only when configured. Treat aviationstack data as third-party and possibly incomplete.
-- Flight number → callsign mapping is **not guaranteed**. Any airline prefix is searched: curated map in `lib/flight.js`, then ~900 codes bundled from OpenFlights (`lib/airlines.json`, regenerate with `node scripts/build-airlines.js`; data is ODbL, may be outdated), then the raw flight number as a fallback. Use `?callsign=` to override.
-- A 404 means "not currently found in tracking data" — **never** that a flight is cancelled or nonexistent.
-- Anonymous OpenSky access is rate limited and may change. Review OpenSky's terms/attribution before production use. For verified status, integrate an authorized provider (keep credentials server-side, in Vercel env vars; never commit them).
+- **Data comes from a third-party provider (aviationstack) and may be incomplete or delayed.** Live position is only present while a flight is airborne and tracked.
+- A 404 means "not found in provider data" — **never** that a flight is cancelled or nonexistent.
+- Quotas, plan limits and terms vary; review aviationstack's before production use. Keep credentials in Vercel env vars; never commit them.
 - WidgetKit refreshes are scheduled by iOS. The app can request a reload, but iOS may defer it for battery/system reasons. Widget requests ~15 min refresh; not guaranteed.
 
 ## Layout
 
 ```
 api/flight/[flightNumber].js   Vercel function
-lib/flight.js                  validation, mapping, OpenSky lookup
+lib/flight.js                  validation + lookup orchestration
+lib/aviationstack.js           aviationstack client + mapping
 public/index.html              website
 test/                          node:test unit tests
 ios/Shared|App|Widget          Swift sources (no .xcodeproj)
@@ -45,10 +45,10 @@ docs/TESTING.md                checklist
 |---|---|
 | 200 | Aircraft found |
 | 400 | Invalid flight number/callsign |
-| 404 | Not found in aviationstack (if configured) or OpenSky |
-| 502 | Upstream error |
+| 404 | Not found in aviationstack |
+| 502 | Upstream error / quota exceeded |
 | 504 | Upstream timeout |
-| 500 | Unexpected |
+| 500 | Unexpected, or API key not configured |
 
 Illustrative 200 (not live data):
 
@@ -65,13 +65,13 @@ Illustrative 200 (not live data):
   "verticalRateMetersPerSecond": 0,
   "lastPositionUpdate": "2026-11-06T15:00:00.000Z",
   "lastContact": "2026-11-06T15:00:02.000Z",
-  "dataSource": "OpenSky Network"
+  "dataSource": "aviationstack"
 }
 ```
 
 404 / 400 body: `{ "error": "...", "status": 404 }`.
 
-Notes: the lookup fetches OpenSky `/states/all` and filters by callsign (OpenSky has no callsign filter). Responses send `Cache-Control: s-maxage=30` so Vercel's CDN absorbs repeat requests.
+Responses send `Cache-Control: s-maxage=30` so Vercel's CDN absorbs repeat requests (helps the free quota).
 
 ## Run & deploy
 
