@@ -5,7 +5,7 @@
   "description": "Flight lookup website, Vercel API (OpenSky) and iOS app + WidgetKit widget starter",
   "engines": { "node": ">=20" },
   "scripts": {
-    "test": "node --test "test/*.test.js"",
+    "test": "node --test test/*.test.js",
     "dev": "vercel dev"
   }
 }
