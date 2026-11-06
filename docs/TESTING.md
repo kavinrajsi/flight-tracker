@@ -3,7 +3,7 @@
 ## API
 - [ ] `npm test` passes.
 - [ ] `GET /api/flight/!!` → 400 with clear message.
-- [ ] `GET /api/flight/ZZ1` → 400 (no mapping), message suggests `?callsign=`.
+- [ ] `GET /api/flight/ZZ1` (unmapped prefix) → 404, not 400.
 - [ ] `GET /api/flight/AI302?callsign=bad!` → 400.
 - [ ] Find a live callsign at <https://opensky-network.org/network/explorer>, call `/api/flight/<fn>?callsign=<cs>` → 200 with documented fields.
 - [ ] Unmatched flight → 404, message does not imply cancellation.

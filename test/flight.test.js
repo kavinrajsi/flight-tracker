@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
-const { validateFlightNumber, resolveCallsign, canonicalCallsign, lookupFlight } = require('../lib/flight');
+const { validateFlightNumber, resolveCallsigns, canonicalCallsign, lookupFlight } = require('../lib/flight');
 
 const state = (callsign, over = {}) => {
   const s = new Array(17).fill(null);
@@ -19,10 +19,12 @@ test('validates flight numbers', () => {
 });
 
 test('resolves callsigns', () => {
-  assert.strictEqual(resolveCallsign('AI302'), 'AIC302');
-  assert.strictEqual(resolveCallsign('6E624'), 'IGO624');
-  assert.strictEqual(resolveCallsign('AI302', 'xyz123'), 'XYZ123');
-  assert.throws(() => resolveCallsign('ZZ1'), { status: 400 });
+  assert.deepStrictEqual(resolveCallsigns('AI302'), ['AIC302', 'AI302']);
+  assert.deepStrictEqual(resolveCallsigns('6E624'), ['IGO624', '6E624']);
+  assert.deepStrictEqual(resolveCallsigns('TK123'), ['THY123', 'TK123']); // from bundled DB
+  assert.deepStrictEqual(resolveCallsigns('ZZ1'), ['ZZ1']); // unknown prefix still searchable
+  assert.deepStrictEqual(resolveCallsigns('AI302', 'xyz123'), ['XYZ123']);
+  assert.throws(() => resolveCallsigns('AI302', 'b!'), { status: 400 });
 });
 
 test('canonicalCallsign strips padding and zeros', () => {

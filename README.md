@@ -7,7 +7,7 @@ Repo: https://github.com/kavinrajsi/flight-tracker
 ## Important limitations
 
 - **OpenSky is aircraft surveillance data, not an airline operations feed.** No schedules, delays, cancellations, gates or terminals.
-- Flight number → callsign mapping is **not guaranteed**. Prefixes in `lib/flight.js` are illustrative; verify and maintain them. Use `?callsign=` to override.
+- Flight number → callsign mapping is **not guaranteed**. Any airline prefix is searched: curated map in `lib/flight.js`, then ~900 codes bundled from OpenFlights (`lib/airlines.json`, regenerate with `node scripts/build-airlines.js`; data is ODbL, may be outdated), then the raw flight number as a fallback. Use `?callsign=` to override.
 - A 404 means "not currently found in tracking data" — **never** that a flight is cancelled or nonexistent.
 - Anonymous OpenSky access is rate limited and may change. Review OpenSky's terms/attribution before production use. For verified status, integrate an authorized provider (keep credentials server-side, in Vercel env vars; never commit them).
 - WidgetKit refreshes are scheduled by iOS. The app can request a reload, but iOS may defer it for battery/system reasons. Widget requests ~15 min refresh; not guaranteed.
@@ -30,7 +30,7 @@ docs/TESTING.md                checklist
 | Status | Meaning |
 |---|---|
 | 200 | Aircraft found |
-| 400 | Invalid flight number/callsign, or no prefix mapping |
+| 400 | Invalid flight number/callsign |
 | 404 | Not currently visible in OpenSky |
 | 502 | Upstream error |
 | 504 | Upstream timeout |
