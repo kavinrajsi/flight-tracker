@@ -41,6 +41,16 @@ test('aviationstack prefers airborne flight over landed one', async () => {
   assert.strictEqual(r.status, 'airborne');
 });
 
+test('aviationstack prefers operating flight over codeshare listings and nearest date', async () => {
+  const cs = AS({ airline: { iata: 'NZ', name: 'Air New Zealand' }, flight: { iata: 'NZ4302', icao: 'ANZ4302', codeshared: { flight_iata: 'ai302' } }, flight_status: 'scheduled', live: null });
+  const far = AS({ flight_status: 'scheduled', live: null, departure: { iata: 'DEL', scheduled: '2026-11-07T01:30:00+00:00' } });
+  const near = AS({ flight_status: 'landed', live: null, departure: { iata: 'DEL', scheduled: '2026-11-06T01:30:00+00:00' } });
+  const now = Date.parse('2026-11-06T12:00:00Z');
+  const r = await lookupFlight('AI302', undefined, { apiKey: 'k', now, fetch: asFetch([cs, far, near]) });
+  assert.strictEqual(r.airline.iata, 'AI');
+  assert.strictEqual(r.status, 'landed'); // closest to now among operating flights
+});
+
 test('aviationstack scheduled/cancelled has null position', async () => {
   const r = await lookupFlight('AI302', undefined, { apiKey: 'k', fetch: asFetch([AS({ flight_status: 'cancelled', live: null })]) });
   assert.strictEqual(r.status, 'cancelled');
