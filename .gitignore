@@ -1,0 +1,9 @@
+node_modules/
+.vercel/
+.env
+.env.*
+.DS_Store
+xcuserdata/
+DerivedData/
+*.xcuserstate
+build/

@@ -1,0 +1,11 @@
+{
+  "name": "flight-tracker",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Flight lookup website, Vercel API (OpenSky) and iOS app + WidgetKit widget starter",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/",
+    "dev": "vercel dev"
+  }
+}

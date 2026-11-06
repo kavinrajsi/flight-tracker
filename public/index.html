@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flight Tracker</title>
+<meta name="description" content="Look up aircraft tracking data by flight number.">
+<style>
+  :root {
+    --bg: #f5f5f7; --card: #fff; --text: #1d1d1f; --muted: #6e6e73;
+    --accent: #0071e3; --ok: #1d8a3a; --warn: #b25e00; --err: #c9302c; --line: #d2d2d7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #000; --card: #1c1c1e; --text: #f5f5f7; --muted: #98989d; --accent: #2997ff; --ok: #30d158; --warn: #ff9f0a; --err: #ff453a; --line: #38383a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 560px; margin: 0 auto; padding: 48px 16px 64px; }
+  h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 28px; }
+  form { display: flex; gap: 8px; }
+  label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  input { flex: 1; min-width: 0; font: inherit; font-size: 1.1rem; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-transform: uppercase; }
+  input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button { font: inherit; font-weight: 600; padding: 14px 22px; border: 0; border-radius: 14px; background: var(--accent); color: #fff; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: progress; }
+  .card { margin-top: 24px; background: var(--card); border-radius: 22px; padding: 22px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .fn { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+  .badge { font-size: .8rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid currentColor; }
+  .badge.airborne { color: var(--ok); } .badge.on-ground { color: var(--warn); }
+  dl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; margin: 20px 0 0; }
+  dt { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+  dd { margin: 2px 0 0; font-size: 1.1rem; font-weight: 600; }
+  .msg { margin-top: 24px; padding: 16px 18px; border-radius: 16px; background: var(--card); }
+  .msg.error { color: var(--err); }
+  .foot { margin-top: 16px; color: var(--muted); font-size: .8rem; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Flight Tracker</h1>
+  <p class="sub">Look up aircraft tracking data by flight number.</p>
+
+  <form id="form">
+    <label for="fn">Flight number</label>
+    <input id="fn" name="fn" placeholder="AI302 or 6E624" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+    <button id="go" type="submit">Track</button>
+  </form>
+
+  <div id="out" aria-live="polite"></div>
+
+  <p class="foot">Data: OpenSky Network aircraft surveillance. This is observed aircraft data, not verified airline status — it does not show schedules, delays, gates or cancellations. Flight-number-to-callsign mapping is not guaranteed.</p>
+</main>
+<script>
+const form = document.getElementById('form');
+const input = document.getElementById('fn');
+const btn = document.getElementById('go');
+const out = document.getElementById('out');
+
+const fmt = (v, unit, digits = 0) => v == null ? '—' : `${Number(v).toFixed(digits)} ${unit}`;
+const time = (s) => s ? new Date(s).toLocaleString() : '—';
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function message(html, cls = '') { out.innerHTML = `<div class="msg ${cls}" role="${cls === 'error' ? 'alert' : 'status'}">${html}</div>`; }
+
+function render(d) {
+  const pos = d.position ? `${d.position.latitude.toFixed(4)}, ${d.position.longitude.toFixed(4)}` : '—';
+  out.innerHTML = `<section class="card">
+    <div class="head"><span class="fn">${esc(d.flightNumber)}</span><span class="badge ${esc(d.status)}">${esc(d.status)}</span></div>
+    <dl>
+      <div><dt>Callsign</dt><dd>${esc(d.callsign)}</dd></div>
+      <div><dt>Origin country</dt><dd>${esc(d.aircraft.originCountry || '—')}</dd></div>
+      <div><dt>Position</dt><dd>${pos}</dd></div>
+      <div><dt>Altitude</dt><dd>${fmt(d.altitudeMeters, 'm')}</dd></div>
+      <div><dt>Speed</dt><dd>${fmt(d.speedMetersPerSecond != null ? d.speedMetersPerSecond * 3.6 : null, 'km/h')}</dd></div>
+      <div><dt>Heading</dt><dd>${fmt(d.headingDegrees, '°')}</dd></div>
+      <div><dt>Last position</dt><dd>${time(d.lastPositionUpdate)}</dd></div>
+      <div><dt>Last contact</dt><dd>${time(d.lastContact)}</dd></div>
+    </dl>
+    <p class="foot">Source: ${esc(d.dataSource)}</p>
+  </section>`;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fn = input.value.replace(/\s+/g, '').toUpperCase();
+  if (!fn) return;
+  btn.disabled = true;
+  message('<span class="spinner"></span>Looking up ' + esc(fn) + '…');
+  try {
+    const res = await fetch('/api/flight/' + encodeURIComponent(fn));
+    const body = await res.json().catch(() => ({}));
+    if (res.ok) render(body);
+    else if (res.status === 404) message('<strong>Not currently found in tracking data.</strong><br>' + esc(body.error || '') );
+    else message(esc(body.error || 'Something went wrong.'), 'error');
+  } catch {
+    message('Network error. Check your connection and try again.', 'error');
+  } finally { btn.disabled = false; }
+});
+</script>
+</body>
+</html>
