@@ -25,3 +25,9 @@
 - [ ] Widget with no saved flight → "No flight selected".
 - [ ] Airplane mode → widget shows "Network unavailable".
 - [ ] Small and medium widget layouts render.
+
+## aviationstack
+- [ ] Without `AVIATIONSTACK_API_KEY`: responses have `dataSource: "OpenSky Network"`.
+- [ ] With key set: flight returns `dataSource: "aviationstack"` with `route` and `schedule`.
+- [ ] Scheduled/cancelled flight returns that status and `position: null`.
+- [ ] Bad key / quota exhausted: falls back to OpenSky; key appears in no response or log.

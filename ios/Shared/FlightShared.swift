@@ -14,8 +14,12 @@ struct FlightInfo: Codable, Equatable {
     struct Aircraft: Codable, Equatable { let icao24: String?; let originCountry: String? }
     struct Position: Codable, Equatable { let latitude: Double; let longitude: Double }
 
+    struct Airport: Codable, Equatable { let iata: String? }
+    struct Route: Codable, Equatable { let departure: Airport; let arrival: Airport }
+
     let flightNumber: String
-    let callsign: String
+    let callsign: String?
+    let route: Route?
     let status: String
     let aircraft: Aircraft
     let position: Position?

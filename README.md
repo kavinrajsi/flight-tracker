@@ -4,9 +4,23 @@ Look up aircraft tracking data by flight number. Website + Vercel API (OpenSky N
 
 Repo: https://github.com/kavinrajsi/flight-tracker
 
+## Data providers
+
+1. **aviationstack** (optional, used when `AVIATIONSTACK_API_KEY` is set): route, schedule, delays, terminal/gate, status (`scheduled`/`airborne`/`landed`/`cancelled`/...) and live position when available. The free plan has a small monthly quota and **serves HTTP only**, so the key is sent unencrypted from Vercel to aviationstack. For HTTPS on a paid plan set `AVIATIONSTACK_BASE_URL=https://api.aviationstack.com/v1`.
+2. **OpenSky** (always the fallback): aircraft position only. Used when aviationstack has no match, is over quota, or errors.
+
+The key stays server-side. Never commit it.
+
+```bash
+vercel env add AVIATIONSTACK_API_KEY   # production / preview / development
+# local: put AVIATIONSTACK_API_KEY=... in .env.local (git-ignored), then `vercel dev`
+```
+
+`dataSource` in each response says which provider answered. Extra fields from aviationstack: `airline`, `route`, `schedule`, `aircraft.registration/type`.
+
 ## Important limitations
 
-- **OpenSky is aircraft surveillance data, not an airline operations feed.** No schedules, delays, cancellations, gates or terminals.
+- **OpenSky is aircraft surveillance data, not an airline operations feed.** Schedules, delays, cancellations and gates come only from aviationstack, and only when configured. Treat aviationstack data as third-party and possibly incomplete.
 - Flight number → callsign mapping is **not guaranteed**. Any airline prefix is searched: curated map in `lib/flight.js`, then ~900 codes bundled from OpenFlights (`lib/airlines.json`, regenerate with `node scripts/build-airlines.js`; data is ODbL, may be outdated), then the raw flight number as a fallback. Use `?callsign=` to override.
 - A 404 means "not currently found in tracking data" — **never** that a flight is cancelled or nonexistent.
 - Anonymous OpenSky access is rate limited and may change. Review OpenSky's terms/attribution before production use. For verified status, integrate an authorized provider (keep credentials server-side, in Vercel env vars; never commit them).
@@ -31,7 +45,7 @@ docs/TESTING.md                checklist
 |---|---|
 | 200 | Aircraft found |
 | 400 | Invalid flight number/callsign |
-| 404 | Not currently visible in OpenSky |
+| 404 | Not found in aviationstack (if configured) or OpenSky |
 | 502 | Upstream error |
 | 504 | Upstream timeout |
 | 500 | Unexpected |

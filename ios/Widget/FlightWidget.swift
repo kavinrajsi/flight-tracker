@@ -72,9 +72,13 @@ struct FlightWidgetView: View {
                 Text(i.flightNumber).font(.title.bold())
                 Text(i.status.capitalized).font(.caption.bold())
                     .foregroundStyle(i.status == "airborne" ? .green : .orange)
-                Text(i.callsign).font(.caption).foregroundStyle(.secondary)
+                if let r = i.route, let d = r.departure.iata, let a = r.arrival.iata {
+                    Text("\(d) → \(a)").font(.caption.bold())
+                } else {
+                    Text(i.callsign ?? "").font(.caption).foregroundStyle(.secondary)
+                }
                 Spacer()
-                Text("OpenSky · not airline status").font(.caption2).foregroundStyle(.secondary)
+                Text(i.dataSource).font(.caption2).foregroundStyle(.secondary)
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 4) {

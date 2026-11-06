@@ -28,7 +28,10 @@ struct ContentView: View {
                 if let info {
                     Section(info.flightNumber) {
                         row("Status", info.status.capitalized)
-                        row("Callsign", info.callsign)
+                        if let r = info.route, r.departure.iata != nil || r.arrival.iata != nil {
+                            row("Route", "\(r.departure.iata ?? "?") → \(r.arrival.iata ?? "?")")
+                        }
+                        row("Callsign", info.callsign ?? "—")
                         row("Country", info.aircraft.originCountry ?? "—")
                         if let p = info.position {
                             row("Position", String(format: "%.4f, %.4f", p.latitude, p.longitude))
@@ -38,7 +41,7 @@ struct ContentView: View {
                         row("Heading", info.headingDegrees.map { "\(Int($0))°" } ?? "—")
                     }
                     Section {
-                        Text("Source: \(info.dataSource). Observed aircraft data, not verified airline status.")
+                        Text("Source: \(info.dataSource). Schedule data is third-party and may be incomplete.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }

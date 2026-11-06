@@ -28,7 +28,8 @@
   .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .fn { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
   .badge { font-size: .8rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid currentColor; }
-  .badge.airborne { color: var(--ok); } .badge.on-ground { color: var(--warn); }
+  .badge.airborne { color: var(--ok); } .badge.on-ground, .badge.scheduled { color: var(--warn); } .badge.landed { color: var(--muted); } .badge.cancelled { color: var(--err); }
+  .route { font-size: 1.3rem; font-weight: 600; margin: 8px 0 0; }
   dl { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; margin: 20px 0 0; }
   dt { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
   dd { margin: 2px 0 0; font-size: 1.1rem; font-weight: 600; }
@@ -53,7 +54,7 @@
 
   <div id="out" aria-live="polite"></div>
 
-  <p class="foot">Data: OpenSky Network aircraft surveillance. This is observed aircraft data, not verified airline status — it does not show schedules, delays, gates or cancellations. Flight-number-to-callsign mapping is not guaranteed.</p>
+  <p class="foot">Data: aviationstack (schedules, route, delays) and OpenSky Network (aircraft surveillance). Schedule data is third-party and may be incomplete; OpenSky data is observed aircraft position only. Flight-number-to-callsign mapping is not guaranteed.</p>
 </main>
 <script>
 const form = document.getElementById('form');
@@ -67,12 +68,32 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;'
 
 function message(html, cls = '') { out.innerHTML = `<div class="msg ${cls}" role="${cls === 'error' ? 'alert' : 'status'}">${html}</div>`; }
 
+function routeHtml(d) {
+  const r = d.route;
+  if (!r || (!r.departure.iata && !r.arrival.iata)) return '';
+  return `<p class="route">${esc(r.departure.iata || '?')} → ${esc(r.arrival.iata || '?')}</p>`;
+}
+function scheduleHtml(d) {
+  const sc = d.schedule, r = d.route;
+  if (!sc) return '';
+  const delay = (m) => m ? ` (${m > 0 ? '+' : ''}${m} min)` : '';
+  const rows = [
+    ['Departure', time(sc.actualDeparture || sc.estimatedDeparture || sc.scheduledDeparture) + delay(sc.departureDelayMinutes)],
+    ['Arrival', time(sc.actualArrival || sc.estimatedArrival || sc.scheduledArrival) + delay(sc.arrivalDelayMinutes)],
+    ['Dep. terminal / gate', [r.departure.terminal, r.departure.gate].filter(Boolean).join(' / ')],
+    ['Arr. terminal / gate', [r.arrival.terminal, r.arrival.gate].filter(Boolean).join(' / ')],
+  ];
+  return rows.filter(([, v]) => v && v !== '—').map(([k, v]) => `<div><dt>${k}</dt><dd>${esc(v)}</dd></div>`).join('');
+}
+
 function render(d) {
   const pos = d.position ? `${d.position.latitude.toFixed(4)}, ${d.position.longitude.toFixed(4)}` : '—';
   out.innerHTML = `<section class="card">
     <div class="head"><span class="fn">${esc(d.flightNumber)}</span><span class="badge ${esc(d.status)}">${esc(d.status)}</span></div>
+    ${routeHtml(d)}
     <dl>
-      <div><dt>Callsign</dt><dd>${esc(d.callsign)}</dd></div>
+      ${scheduleHtml(d)}
+      <div><dt>Callsign</dt><dd>${esc(d.callsign || '—')}</dd></div>
       <div><dt>Origin country</dt><dd>${esc(d.aircraft.originCountry || '—')}</dd></div>
       <div><dt>Position</dt><dd>${pos}</dd></div>
       <div><dt>Altitude</dt><dd>${fmt(d.altitudeMeters, 'm')}</dd></div>
