@@ -14,6 +14,7 @@ const fakeFetch = (states, ok = true, status = 200) => async () => ({ ok, status
 test('validates flight numbers', () => {
   assert.strictEqual(validateFlightNumber(' ai302 '), 'AI302');
   assert.strictEqual(validateFlightNumber('6e624'), '6E624');
+  assert.strictEqual(validateFlightNumber('axb2935'), 'AXB2935');
   assert.throws(() => validateFlightNumber('!!'), { status: 400 });
   assert.throws(() => validateFlightNumber('AI'), { status: 400 });
 });
@@ -22,6 +23,7 @@ test('resolves callsigns', () => {
   assert.deepStrictEqual(resolveCallsigns('AI302'), ['AIC302', 'AI302']);
   assert.deepStrictEqual(resolveCallsigns('6E624'), ['IGO624', '6E624']);
   assert.deepStrictEqual(resolveCallsigns('TK123'), ['THY123', 'TK123']); // from bundled DB
+  assert.deepStrictEqual(resolveCallsigns('AXB2935'), ['AXB2935']); // ICAO callsign
   assert.deepStrictEqual(resolveCallsigns('ZZ1'), ['ZZ1']); // unknown prefix still searchable
   assert.deepStrictEqual(resolveCallsigns('AI302', 'xyz123'), ['XYZ123']);
   assert.throws(() => resolveCallsigns('AI302', 'b!'), { status: 400 });
